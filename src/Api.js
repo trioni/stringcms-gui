@@ -1,5 +1,6 @@
-// const HOST = 'http://localhost:8085/app/storage';
-const HOST = '/app/storage';
+const USE_PROXY = process.env.REACT_APP_USE_PROXY;
+const HOST = USE_PROXY ? '/app/storage' : 'http://localhost:8085/app/storage';
+const RESOURCE = '/en-locale.json';
 
 async function parseResponse(res) {
   if (res.ok) {
@@ -26,7 +27,7 @@ async function parseResponse(res) {
 
 class Api {
   static getFile() {
-    return fetch(`${HOST}/hello.json`, {
+    return fetch(`${HOST}${RESOURCE}`, {
       headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json'
@@ -35,12 +36,13 @@ class Api {
   }
 
   static save(body, etag) {
-    return fetch(`${HOST}/hello.json`, {
+    return fetch(`${HOST}${RESOURCE}`, {
       method: 'PUT',
       credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
         'If-Match': etag,
+        // Authorization: 'Basic abc',
       },
       body: JSON.stringify({
         message: 'Commit message from gui',

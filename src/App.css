@@ -77,7 +77,7 @@
   display: flex;
   padding: 24px;
   flex-direction: column;
-  font-size: calc(10px + 2vmin);
+  /* font-size: calc(10px + 2vmin); */
   color: white;
   overflow-y: auto;
 }
