@@ -1,5 +1,5 @@
 const USE_PROXY = process.env.REACT_APP_USE_PROXY;
-const HOST = USE_PROXY ? '/app/storage' : 'http://localhost:8085/app/storage';
+const HOST = USE_PROXY ? '/app/storage' : process.env.REACT_APP_ENDPOINT;
 const RESOURCE = '/en-locale.json';
 
 async function parseResponse(res) {

@@ -1,3 +1,20 @@
+## Setup
+
+A
+dd the endpoint you want to use:
+```bash
+echo "REACT_APP_ENDPOINT=https://example.com/app/storage" > .env
+```
+
+Install dependencies and start
+
+```bash
+yarn install
+yarn start
+```
+
+---
+
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts
