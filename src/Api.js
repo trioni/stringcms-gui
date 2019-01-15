@@ -1,6 +1,19 @@
 const USE_PROXY = process.env.REACT_APP_USE_PROXY;
 const HOST = USE_PROXY ? '/app/storage' : process.env.REACT_APP_ENDPOINT;
-const RESOURCE = '/en-locale.json';
+class ExtendableError extends Error {
+  constructor(message, code = 500) {
+    super(message);
+    this.name = this.constructor.name;
+    this.code = code;
+    if (typeof Error.captureStackTrace === 'function') {
+      Error.captureStackTrace(this, this.constructor);
+    } else {
+      this.stack = new Error(message).stack;
+    }
+  }
+}
+
+export class ApiError extends ExtendableError {}
 
 async function parseResponse(res) {
   if (res.ok) {
@@ -15,12 +28,23 @@ async function parseResponse(res) {
 
     return res.text();
   }
-  return res.text();
+
+  let errorJson = {
+    message: 'Error getting data',
+    code: 500,
+  };
+
+  try {
+    errorJson = await res.json();
+  } catch (err) {
+    // do nothing
+  }
+  throw new ApiError(errorJson.message, errorJson.code);
 }
 
 class Api {
-  static getFile() {
-    return fetch(`${HOST}${RESOURCE}`, {
+  static getFile(resource) {
+    return fetch(`${HOST}/${resource}`, {
       headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json'
@@ -28,8 +52,12 @@ class Api {
     }).then(parseResponse);
   }
 
-  static save(body, etag) {
-    return fetch(`${HOST}${RESOURCE}`, {
+  static listKeys() {
+    return fetch(`${HOST}?recursive=true&light=true`).then(parseResponse).then((r) => r.data.result);
+  }
+
+  static save(resource, body, etag) {
+    return fetch(`${HOST}/${resource}`, {
       method: 'PUT',
       credentials: 'include',
       headers: {

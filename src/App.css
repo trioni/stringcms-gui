@@ -2,19 +2,6 @@
   box-sizing: border-box;
 }
 
-.App {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  height: 100vh;
-  overflow: hidden;
-}
-
-.layout-pane {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-}
-
 .layout-topbar {
   flex: none;
 }

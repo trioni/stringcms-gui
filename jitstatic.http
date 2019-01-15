@@ -1,0 +1,9 @@
+# VS Code plugin: https://marketplace.visualstudio.com/items?itemName=humao.rest-client
+
+@url = https://stage.looklet.com/remote/storage
+
+### Get the data in storage
+GET {{url}}
+
+### List all keys in Storage
+GET {{url}}?recursive=true&light=true
