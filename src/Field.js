@@ -9,11 +9,15 @@ import IconButton from '@material-ui/core/IconButton';
 import DeleteIcon from '@material-ui/icons/Delete';
 
 const Field = (props) => {
-  const { name, onDelete, fieldStyle = 'bare', className, classes, ...rest } = props;
+  const { name, onDelete, fieldStyle = 'bare', className, classes, vertical = false, autoComplete = "off", inputRef, ...rest } = props;
   if (fieldStyle === 'mui') {
     return (
-      <FormControl className={classNames(className, classes.root)}>
-        <InputLabel shrink htmlFor={name} className={classes.bootstrapFormLabel}>
+      <FormControl className={classNames(className, classes.root, {
+        [classes.rootVertical]: vertical
+      })}>
+        <InputLabel shrink htmlFor={name} className={classNames(classes.bootstrapFormLabel, {
+          [classes.labelVertical]: vertical
+        })}>
           {name}
         </InputLabel>
         <InputBase
@@ -23,7 +27,11 @@ const Field = (props) => {
             root: classes.bootstrapRoot,
             input: classes.bootstrapInput,
           }}
+          // multiline
+          inputRef={inputRef}
+          {...(vertical ? { fullWidth: true } : {})}
           {...rest}
+          autoComplete={autoComplete}
         />
         {onDelete && (
           <IconButton value={name} type="button" onClick={onDelete}><DeleteIcon /></IconButton>
@@ -34,7 +42,7 @@ const Field = (props) => {
   return (
     <div className="Field">
       <label htmlFor={name}>{name}</label>
-      <input name={name} id={name} {...rest} />
+      <input name={name} id={name} {...rest} autoComplete={autoComplete} />
       {onDelete && (
         <button value={name} type="button" onClick={onDelete}>Delete</button>
       )}
@@ -62,6 +70,9 @@ const styles = ({ palette, spacing, transitions }) => ({
     flexDirection: 'row',
     alignItems: 'center'
   },
+  rootVertical: {
+    flexDirection: 'column'
+  },
   bootstrapRoot: {
     flex: 1
   },
@@ -77,6 +88,9 @@ const styles = ({ palette, spacing, transitions }) => ({
       borderColor: '#80bdff',
       boxShadow: '0 0 0 0.2rem rgba(0,123,255,.25)',
     },
+  },
+  labelVertical: {
+    alignSelf: 'flex-start'
   },
   bootstrapFormLabel: {
     position: 'static'

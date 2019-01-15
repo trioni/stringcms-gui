@@ -19,10 +19,6 @@
   flex: none;
 }
 
-.layout-main {
-  overflow-y: auto;
-}
-
 .row {
   display: flex;
 }

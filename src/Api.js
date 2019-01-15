@@ -6,13 +6,6 @@ async function parseResponse(res) {
   if (res.ok) {
     const etag = res.headers.get('ETag');
     const contentType = res.headers.get('Content-Type');
-    for (let header of res.headers) {
-      console.log('HEADER --> ', header);
-    }
-    console.log(
-      'Response',
-      res
-    )
     if (contentType.includes('application/json')) {
       return res.json().then((data) => ({
         etag,
@@ -42,7 +35,6 @@ class Api {
       headers: {
         'Content-Type': 'application/json',
         'If-Match': etag,
-        // Authorization: 'Basic abc',
       },
       body: JSON.stringify({
         message: 'Commit message from gui',
