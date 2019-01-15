@@ -1,0 +1,23 @@
+runtime: python27
+api_version: 1
+threadsafe: true
+service: stringcms
+handlers:
+  # Site root without needing to specify index.html
+  - url: /
+    static_files: build/index.html
+    upload: build/index.html
+  # All files compiled in the build
+  # TODO: Could this be auto-generated?
+  # TODO: Secure access to source map files on prod (.map)
+  - url: /(.*\.(html|js|css|ico|gz|map|json|bmp|gif|jpe|jpeg|png|svg|eot|ttf|woff|woff2))
+    static_files: build/\1
+    upload: build/(.*\.(html|js|css|ico|gz|map|json|bmp|gif|jpe|jpeg|png|svg|eot|ttf|woff|woff2))
+  # Site deep client route urls
+  - url: /(.*)
+    static_files: build/index.html
+    upload: build/index.html
+
+skip_files:
+  - ^.*\.map$ # Skipping .map file for now
+  - ^(?!build).*$
