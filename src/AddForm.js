@@ -1,8 +1,21 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import Select from 'react-select/lib/Creatable';
-import Field from './Field';
+import Select from 'react-select';
+import Grid from '@material-ui/core/Grid';
+import TextField from '@material-ui/core/TextField';
+import Typography from '@material-ui/core/Typography';
 
+const sharedTextFieldProps = {
+  fullWidth: true,
+  autoComplete: 'off',
+  variant: 'outlined',
+  InputLabelProps: {
+    shrink: true,
+    style: {
+      zIndex: 0,
+    },
+  },
+};
 class AddForm extends React.Component {
   inputKeyRef = React.createRef()
 
@@ -10,10 +23,11 @@ class AddForm extends React.Component {
     const { onSubmit, onChange, className, options, values = {} } = this.props;
     return (
       <form onSubmit={onSubmit} className={className}>
-        <label htmlFor="clone-key">Clone Key</label>
+        <Typography color="textSecondary" style={{ marginBottom: 16 }}>Pick an existing key to clone from or add a brand new one</Typography>
         <Select
           name="clone-key"
           id="clone-key"
+          placeholder="Select key to clone from"
           onChange={(option) => {
             const value = option.value.substring(0, option.value.lastIndexOf('.') + 1);
             onChange({
@@ -28,23 +42,28 @@ class AddForm extends React.Component {
           options={options}
           
         />
-        <Field
-          inputRef={this.inputKeyRef}
-          fieldStyle="mui"
-          name="key"
-          autoComplete="off"
-          value={values.key}
-          onChange={onChange}
-          vertical
-        />
-        <Field
-          fieldStyle="mui"
-          name="value"
-          autoComplete="off"
-          value={values.value}
-          onChange={onChange}
-          vertical
-        />
+        <Grid container spacing={16} style={{ marginTop: 24 }}>
+          <Grid item xs={6}>
+            <TextField
+              inputRef={this.inputKeyRef}
+              name="key"
+              label="Key"
+              value={values.key || ''}
+              onChange={onChange}
+              autoFocus
+              {...sharedTextFieldProps}
+            />
+          </Grid>
+          <Grid item xs={6}>
+            <TextField
+              name="value"
+              label="Value"
+              value={values.value || ''}
+              onChange={onChange}
+              {...sharedTextFieldProps}
+            />
+          </Grid>
+        </Grid>
         <button type="submit" style={{display: 'none'}}>submit</button>
       </form>
     );

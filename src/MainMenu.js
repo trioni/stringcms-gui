@@ -8,13 +8,13 @@ const MainMenu = (props) => {
     <div className={classes.root}>
       <ul className={classes.list}>
         {entries.map((page) => {
-          const keyParts = page.key.replace('.json', '').split('-');
+          const [locale, appId, pageSlug] = page.key.replace('.json', '').split('-');
           return (
             <li key={page.key}>
-              <NavLink to={`/pages/${page.key}`} className={classes.listItem}>
-                <span className={classes.localeSlug}>{keyParts[0]}</span>
-                <span className={classes.appSlug}>{keyParts[1]}</span>
-                {keyParts[2] && <span className={classes.pageSlug}>{keyParts[2]}</span>}
+              <NavLink to={`/pages/${locale}/${appId}/${pageSlug}`} className={classes.listItem}>
+                <span className={classes.localeSlug}>{locale}</span>
+                <span className={classes.appSlug}>{appId}</span>
+                {pageSlug && <span className={classes.pageSlug}>{pageSlug}</span>}
               </NavLink>
             </li>
           )
@@ -24,15 +24,14 @@ const MainMenu = (props) => {
   );
 };
 
-const styles = ({ spacing }) => {
+const styles = ({ spacing, custom }) => {
   const spacing2 = spacing.unit * 2;
   const spacing3 = spacing.unit * 3;
-  const bgColor = '#436D9B';
-  const textColor = '#B6DEFA';
-  const activeColor = '#15A5FA';
-  const activeBgColor = '#2B4059';
+
+  const { bgColor, textColor, activeColor, activeBgColorRgba } = custom.dark;
   return {
     root: {
+      minWidth: 250,
       backgroundColor: bgColor,
       color: textColor,
     },
@@ -42,26 +41,25 @@ const styles = ({ spacing }) => {
     },
     listItem: {
       color: textColor,
-      display: 'block',
+      display: 'flex',
+      alignItems: 'center',
       padding: `${spacing2}px ${spacing3}px`,
       borderLeft: '5px solid transparent',
       textDecoration: 'none',
       '&.active': {
         borderLeftColor: activeColor,
-        backgroundColor: activeBgColor,
+        backgroundColor: activeBgColorRgba,
       }
     },
     localeSlug: {
       backgroundColor: textColor,
       padding: 4,
-      // borderRadius: 4,
       fontSize: '0.75rem',
       color: bgColor,
     },
     appSlug: {
       backgroundColor: activeColor,
       padding: 4,
-      // borderRadius: 4,
       fontSize: '0.75rem',
       marginRight: spacing.unit,
     },

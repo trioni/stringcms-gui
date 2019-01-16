@@ -1,18 +1,27 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { withStyles } from '@material-ui/core/styles';
-import AppBar from '@material-ui/core/AppBar';
 import Dialog from '@material-ui/core/Dialog';
+import DialogTitle from '@material-ui/core/DialogTitle';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogActions from '@material-ui/core/DialogActions';
-// import IconButton from '@material-ui/core/IconButton';
+import TextField from '@material-ui/core/TextField';
 import Button from '@material-ui/core/Button';
-import AddIcon from '@material-ui/icons/Add';
-import _get from 'lodash/get';
-import './App.css';
+import IconButton from '@material-ui/core/IconButton';
+import Tooltip from '@material-ui/core/Tooltip';
+import DeleteIcon from '@material-ui/icons/Delete';
+import PreviewIcon from '@material-ui/icons/RemoveRedEye';
+import Version from './components/Version';
+import PreviewDialog from './components/PreviewDialog';
+import FloatingTopbar from './components/FloatingTopbar';
+import TextLabel from './components/TextLabel';
 import Api from './Api';
-import Field from './Field';
 import AddForm from './AddForm';
+import { KeyboardUtil } from './utils'; 
+
+const DialogType = {
+  ADD: 'add',
+  PREVIEW: 'preview'
+};
 
 function sortedByKey(data) {
   // Get keys containing period . and return the first part of it
@@ -47,25 +56,32 @@ class SimpleEditor extends React.Component {
   };
 
   componentDidMount() {
-    this.fetchData(this.getPageId(this.props));
+    this.fetchData(this.getFileName(this.props));
+    window.addEventListener('keyup', this.handleKeyEvent);
   }
 
   componentDidUpdate(prevProps) {
-    const pageId = this.getPageId(this.props);
-    const prevPageId = this.getPageId(prevProps);
+    const pageId = this.getFileName(this.props);
+    const prevPageId = this.getFileName(prevProps);
     if (pageId !== prevPageId) {
       this.fetchData(pageId);
     }
   }
 
-  getPageId = (props) => {
-    return _get(props, 'match.params.id');
+  componentWillUnmount() {
+    window.removeEventListener('keyup', this.handleKeyEvent);
+  }
+
+  getFileName = (props) => {
+    const { locale, appId, pageSlug } = props.match.params;
+    return `${locale}-${appId}-${pageSlug}.json`;
   }
 
   fetchData = async (fileId) => {
     this.setState({
       isLoading: true,
       error: null,
+      addForm: {}
     });
 
     try {
@@ -83,6 +99,13 @@ class SimpleEditor extends React.Component {
       });
     }
   }
+
+  handleKeyEvent = (e) => {
+    const shouldBail = KeyboardUtil.shouldBail(e.target);
+    if (!shouldBail && e.key === 'a') {
+      this.handleOpenAddDialog();
+    }
+  };
 
   handleOpenDialog = (name, data) => {
     this.setState({
@@ -104,7 +127,11 @@ class SimpleEditor extends React.Component {
   }
 
   handleOpenAddDialog = () => {
-    this.handleOpenDialog('add');
+    this.handleOpenDialog(DialogType.ADD);
+  }
+
+  handleOpenPreviewDialog = () => {
+    this.handleOpenDialog(DialogType.PREVIEW);
   }
 
   handleChange = (e) => {
@@ -178,7 +205,7 @@ class SimpleEditor extends React.Component {
   }
 
   handleSearchChange = (e) => {
-    const { value } = e.target;
+    const { value = '' } = e.target;
     this.setState({
       query: value,
     });
@@ -188,7 +215,7 @@ class SimpleEditor extends React.Component {
     e.preventDefault();
     const { etag, data } = this.state;
     try {
-      const pageId = this.getPageId(this.props);
+      const pageId = this.getFileName(this.props);
       await Api.save(pageId, data, etag);
       this.fetchData(pageId);
     } catch (err) {
@@ -201,78 +228,65 @@ class SimpleEditor extends React.Component {
 
   render() {
     const { classes } = this.props;
-    const { data, etag, addForm, isLoading, query, namespaces, dialog = {}, error } = this.state;
+    const { data, etag, addForm, isLoading, query, namespaces = [], dialog = {}, error } = this.state;
     if (error) {
       return <pre>{JSON.stringify(error, null, 2)}</pre>
     }
     const isJson = typeof data === 'object';
+    const filtered = Object.entries(data).filter(([key = '', value = '']) =>
+      key.includes(query) || value.toLowerCase().includes(query)
+    );
+    const numKeys = filtered.length;
     return (
-      <div>
+      <div className={classes.root}>
         <div className={classes.contentWrapper}>
-          <AppBar position="static">
-            <header className="Header layout-topbar">
-              <div className="row">
-                <div className="column flex">
-                  <form onSubmit={this.handleSearchSubmit}>
-                    <input className="Search" autoComplete="off" name="key-search" id="key-search" value={query} onChange={this.handleSearchChange} />
-                    <button type="submit" style={{ display: 'none'}}>Search</button>
-                  </form>
-                  <div className="row">
-                    {namespaces.map((ns) => <button key={ns} value={ns} onClick={this.handleSearchChange}>{ns}</button>)}
-                    <button value="" className="rowAction" onClick={this.handleSearchChange}>Clear</button>
-                  </div>
-                </div>
-                <Button onClick={this.handleOpenAddDialog} variant="fab" color="primary"><AddIcon /></Button>
-              </div>
-            </header>
-          </AppBar>
+          <FloatingTopbar className={classes.topbar} onSearch={this.handleSearchSubmit} onChange={this.handleSearchChange} value={query} onAdd={this.handleOpenAddDialog}>
+            {namespaces.length > 0 && (
+              <React.Fragment>
+                <TextLabel className={classes.label}>Quick filter:</TextLabel>
+                {namespaces.map((ns) => <button key={ns} value={ns} onClick={this.handleSearchChange}>{ns}</button>)}
+                <div className={classes.numKeys}>{numKeys} <TextLabel tagName="span">keys</TextLabel></div>
+              </React.Fragment>
+            )}
+          </FloatingTopbar>
           <div className={classes.main}>
-            <p>Current version: {etag}</p>
-            <form onSubmit={this.handleSubmit} className="Form" id="master-form">
-              {isJson && Object.keys(data).map((key) => {
-                const value = data[key];
-                if (typeof value === 'object') {
-                  return (
-                    <div>
-                      <h2>{key}</h2>
-                      <div>
-                        {Object.keys(value).map((subkey) => (
-                          <Field
-                            fieldStyle="mui"
-                            key={subkey}
-                            name={subkey}
-                            onChange={this.handleChange}
-                            onDelete={this.handleDeleteKey}
-                            value={value[subkey]}
-                            disabled={isLoading}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )
-                }
-                if (!key.includes(query) && !value.includes(query)) return null;
+            <form onSubmit={this.handleSubmit} className={classes.form} id="master-form">
+              {isJson && filtered.map(([key, value]) => {
                 return (
-                  <Field
-                    fieldStyle="mui"
-                    key={key}
-                    name={key}
-                    value={value}
-                    className={`Field--bootstrap ${classes.row}`}
-                    onChange={this.handleChange}
-                    onDelete={this.handleDeleteKey}
-                    disabled={isLoading}
-                  />
+                  <div className={classes.entry} key={key}>
+                    <TextField
+                      variant="filled"
+                      label={key}
+                      key={key}
+                      name={key}
+                      value={value}
+                      className={classes.entryInput}
+                      onChange={this.handleChange}
+                      disabled={isLoading}
+                    />
+                    <IconButton value={key} type="button" onClick={this.handleDeleteKey}><DeleteIcon /></IconButton>
+                  </div>
                 )
               })}
             </form>
           </div>
           <footer className={classes.footer}>
+            <div>
+              <Tooltip title="Preview">
+                <IconButton onClick={this.handleOpenPreviewDialog}><PreviewIcon /></IconButton>
+              </Tooltip>
+            </div>
+            <Version version={etag} className={classes.version} />
             <Button type="submit" disabled={isLoading} variant="contained" color="primary" form="master-form">save</Button>
           </footer>
         </div>
+        <PreviewDialog
+          open={dialog.isOpen && dialog.name === DialogType.PREVIEW}
+          onClose={this.handleCloseDialog}
+          data={data}
+        />
         <Dialog
-          open={dialog.isOpen && dialog.name === 'add'}
+          open={dialog.isOpen && dialog.name === DialogType.ADD}
           onClose={this.handleCloseDialog}
           scroll="body"
           className={classes.hasDropdown}
@@ -280,6 +294,7 @@ class SimpleEditor extends React.Component {
             paperScrollBody: classes.hasDropdown
           }}
         >
+          <DialogTitle>Add Text</DialogTitle>
           <DialogContent className={classes.hasDropdown}>
             <AddForm onSubmit={this.handleSubmitKey} onChange={this.handleAddFormChange} className={classes.addForm} options={Object.keys(data).map((key) => ({ value: key, label: key}))} values={addForm} />
           </DialogContent>
@@ -295,25 +310,72 @@ class SimpleEditor extends React.Component {
 
 const styles = ({ palette, spacing }) => ({
   root: {
-    
+    backgroundColor: '#eee'
+  },
+  header: {
+    flex: 'none',
+    padding: spacing.unit * 2,
+    backgroundColor: palette.grey[100],
+    borderBottom: `1px solid ${palette.grey[300]}`,
+  },
+  topbar: {
+    flex: 'none',
+    margin: spacing.unit * 2,
+    marginBottom: 0,
+    zIndex: 1,
+  },
+  numKeys: {
+    marginLeft: 'auto',
+    display: 'flex',
+    alignItems: 'center',
+    '& > *': {
+      marginLeft: 4,
+    }
   },
   contentWrapper: {
     display: 'flex',
     flexDirection: 'column',
     height: '100vh'
   },
+  label: {
+    marginRight: 4,
+    display: 'inline-flex'
+  },
   main: {
     flexGrow: 1,
     overflowY: 'auto'
   },
-  footer: {
-    borderTop: `1px solid ${palette.grey[400]}`,
-    padding: spacing.unit * 2,
-    flex: 'none'
+  form: {
+    paddingTop: 40,
+    paddingBottom: 40,
+    paddingLeft: spacing.unit * 2,
+    paddingRight: spacing.unit * 2,
+    marginLeft: 'auto',
+    marginRight: 'auto',
+    maxWidth: 650
   },
-  row: {
+  footer: {
+    backgroundColor: '#fff',
+    borderTop: `1px solid ${palette.grey[300]}`,
+    padding: spacing.unit * 2,
+    flex: 'none',
     display: 'grid',
-    gridTemplateColumns: '1fr minmax(200px, 400px) 50px',
+    gridTemplateColumns: '1fr repeat(2, min-content)',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gridGap: `${spacing.unit * 2}px`,
+  },
+  version: {
+    gridColumn: '2/3',
+  },
+  entry: {
+    display: 'flex',
+    alignItems: 'center',
+    marginBottom: spacing.unit * 2
+  },
+  entryInput: {
+    display: 'flex',
+    flex: 1
   },
   hasDropdown: {
     overflowY: 'visible'

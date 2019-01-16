@@ -5,11 +5,9 @@ import { withStyles } from '@material-ui/core/styles';
 import FormControl from '@material-ui/core/FormControl';
 import InputLabel from '@material-ui/core/InputLabel';
 import InputBase from '@material-ui/core/InputBase';
-import IconButton from '@material-ui/core/IconButton';
-import DeleteIcon from '@material-ui/icons/Delete';
 
 const Field = (props) => {
-  const { name, onDelete, fieldStyle = 'bare', className, classes, vertical = false, autoComplete = "off", inputRef, ...rest } = props;
+  const { name, fieldStyle = 'bare', className, classes, vertical = false, autoComplete = "off", inputRef, ...rest } = props;
   if (fieldStyle === 'mui') {
     return (
       <FormControl className={classNames(className, classes.root, {
@@ -33,9 +31,6 @@ const Field = (props) => {
           {...rest}
           autoComplete={autoComplete}
         />
-        {onDelete && (
-          <IconButton value={name} type="button" onClick={onDelete}><DeleteIcon /></IconButton>
-        )}
     </FormControl>
     )
   }
@@ -43,9 +38,6 @@ const Field = (props) => {
     <div className="Field">
       <label htmlFor={name}>{name}</label>
       <input name={name} id={name} {...rest} autoComplete={autoComplete} />
-      {onDelete && (
-        <button value={name} type="button" onClick={onDelete}>Delete</button>
-      )}
     </div>
   );
 };
@@ -54,7 +46,6 @@ Field.propTypes = {
   name: PropTypes.string,
   value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   onChange: PropTypes.func,
-  onDelete: PropTypes.func,
   disabled: PropTypes.bool,
   fieldStyle: PropTypes.oneOf(['bare', 'mui']),
   classes: PropTypes.shape({

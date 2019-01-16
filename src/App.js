@@ -2,7 +2,6 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { withStyles } from '@material-ui/core/styles';
 import { Route } from 'react-router-dom';
-import './App.css';
 import SimpleEditor from './SimpleEditor';
 import MainMenu from './MainMenu';
 import Api from './Api';
@@ -49,7 +48,7 @@ class App extends Component {
     return (
       <div className={classes.app}>
         <MainMenu entries={pages} />
-        <Route path="/pages/:id" component={SimpleEditor} />
+        <Route path="/pages/:locale/:appId/:pageSlug" component={SimpleEditor} />
       </div>
     );
   }
@@ -58,7 +57,7 @@ class App extends Component {
 const styles = () => ({
   app: {
     display: 'grid',
-    gridTemplateColumns: 'minmax(100px, 350px) 1fr',
+    gridTemplateColumns: 'min-content 1fr',
     height: '100vh',
     overflow: 'hidden'
   }
