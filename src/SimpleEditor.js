@@ -187,7 +187,6 @@ class SimpleEditor extends React.Component {
   handleDeleteKey = (e) => {
     e.preventDefault();
     const { value } = e.currentTarget;
-    console.log('[Value to delete]', value);
     this.setState(({ data }) => {
       delete data[value];
       return {
@@ -238,7 +237,7 @@ class SimpleEditor extends React.Component {
     );
     const numKeys = filtered.length;
     return (
-      <div className={classes.root}>
+      <div>
         <div className={classes.contentWrapper}>
           <FloatingTopbar className={classes.topbar} onSearch={this.handleSearchSubmit} onChange={this.handleSearchChange} value={query} onAdd={this.handleOpenAddDialog}>
             {namespaces.length > 0 && (
@@ -309,9 +308,6 @@ class SimpleEditor extends React.Component {
 }
 
 const styles = ({ palette, spacing }) => ({
-  root: {
-    backgroundColor: '#eee'
-  },
   header: {
     flex: 'none',
     padding: spacing.unit * 2,
