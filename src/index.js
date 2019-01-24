@@ -2,6 +2,9 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { MuiThemeProvider } from '@material-ui/core/styles';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import ToastCloseButton from './components/ToastCloseButton';
 import theme from './theme';
 import App from './App';
 import * as serviceWorker from './serviceWorker';
@@ -11,6 +14,7 @@ ReactDOM.render(
     <Router>
       <App />
     </Router>
+    <ToastContainer position={toast.POSITION.BOTTOM_CENTER} closeButton={<ToastCloseButton />} />
   </MuiThemeProvider>
 , document.getElementById('root'));
 

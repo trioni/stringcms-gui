@@ -10,10 +10,12 @@ import IconButton from '@material-ui/core/IconButton';
 import Tooltip from '@material-ui/core/Tooltip';
 import DeleteIcon from '@material-ui/icons/Delete';
 import PreviewIcon from '@material-ui/icons/RemoveRedEye';
+import { toast } from 'react-toastify';
 import Version from './components/Version';
 import PreviewDialog from './components/PreviewDialog';
 import FloatingTopbar from './components/FloatingTopbar';
 import TextLabel from './components/TextLabel';
+import NotFound from './components/NotFound';
 import Api from './Api';
 import AddForm from './AddForm';
 import { KeyboardUtil } from './utils'; 
@@ -216,6 +218,9 @@ class SimpleEditor extends React.Component {
     try {
       const pageId = this.getFileName(this.props);
       await Api.save(pageId, data, etag);
+      toast.success('Saved', {
+        autoClose: 1000
+      });
       this.fetchData(pageId);
     } catch (err) {
       this.setState({
@@ -229,6 +234,9 @@ class SimpleEditor extends React.Component {
     const { classes } = this.props;
     const { data, etag, addForm, isLoading, query, namespaces = [], dialog = {}, error } = this.state;
     if (error) {
+      if (error.code === 404) {
+        return <NotFound>404</NotFound>
+      }
       return <pre>{JSON.stringify(error, null, 2)}</pre>
     }
     const isJson = typeof data === 'object';

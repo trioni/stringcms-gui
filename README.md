@@ -1,7 +1,10 @@
+# String CMS
+
+A simple ui for managing text strings. Built on top of [Jitstatic](https://github.com/hheg/jitstatic)
+
 ## Setup
 
-A
-dd the endpoint you want to use:
+Add the endpoint you want to use:
 ```bash
 echo "REACT_APP_ENDPOINT=https://example.com/app/storage" > .env
 ```

@@ -19,7 +19,7 @@ async function parseResponse(res) {
   if (res.ok) {
     const etag = res.headers.get('ETag');
     const contentType = res.headers.get('Content-Type');
-    if (contentType.includes('application/json')) {
+    if (contentType && contentType.includes('application/json')) {
       return res.json().then((data) => ({
         etag,
         data
@@ -42,6 +42,14 @@ async function parseResponse(res) {
   throw new ApiError(errorJson.message, errorJson.code);
 }
 
+const DEFAULT_METADATA = {
+  contentType: 'application/json',
+  users: [],
+  write: [{
+    role: 'editor'
+  }]
+};
+
 class Api {
   static getFile(resource) {
     return fetch(`${HOST}/${resource}`, {
@@ -56,6 +64,26 @@ class Api {
     return fetch(`${HOST}?recursive=true&light=true`).then(parseResponse).then((r) => r.data.result);
   }
 
+  static createJsonFile(filename) {
+    const payload = {
+      data: btoa(JSON.stringify({ key: 'value'})),
+      message: 'Creating file from String CMS',
+      userMail: 'stringcms@example.com',
+      userInfo: 'Master of Strings',
+      metaData: DEFAULT_METADATA,
+    };
+
+    return fetch(`${HOST}/${filename}.json`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    }).then(parseResponse)
+  }
+
   static save(resource, body, etag) {
     return fetch(`${HOST}/${resource}`, {
       method: 'PUT',
@@ -66,8 +94,8 @@ class Api {
       },
       body: JSON.stringify({
         message: 'Commit message from gui',
-        userMail: 'master@example.com',
-        userInfo: 'From Gui',
+        userMail: 'stringcms@example.com',
+        userInfo: 'Master of Strings',
         data: btoa(JSON.stringify(body))
       })
     })

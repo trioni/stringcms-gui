@@ -1,9 +1,12 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { withStyles } from '@material-ui/core/styles';
+import Button from '@material-ui/core/Button';
+import Tooltip from '@material-ui/core/Tooltip';
+import AddIcon from '@material-ui/icons/Add';
 
 const MainMenu = (props) => {
-  const { entries = [], classes } = props;
+  const { entries = [], classes, onAdd } = props;
   return ( 
     <div className={classes.root}>
       <ul className={classes.list}>
@@ -20,6 +23,13 @@ const MainMenu = (props) => {
           )
         })}
       </ul>
+      <div className={classes.footer}>
+        <Tooltip title="Shortcut: p">
+          <Button fullWidth onClick={onAdd} variant="contained" color="primary">
+            <AddIcon /> Add page
+          </Button>
+        </Tooltip>
+      </div>
     </div>
   );
 };
@@ -34,10 +44,13 @@ const styles = ({ spacing, custom }) => {
       minWidth: 250,
       backgroundColor: bgColor,
       color: textColor,
+      display: 'flex',
+      flexDirection: 'column'
     },
     list: {
       listStyle: 'none',
       paddingLeft: 0,
+      flexGrow: 1
     },
     listItem: {
       color: textColor,
@@ -65,6 +78,9 @@ const styles = ({ spacing, custom }) => {
     },
     pageSlug: {
       textTransform: 'uppercase'
+    },
+    footer: {
+      padding: spacing2
     }
   };
 };

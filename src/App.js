@@ -1,22 +1,33 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { withStyles } from '@material-ui/core/styles';
-import Typography from '@material-ui/core/Typography';
-import Card from '@material-ui/core/Card';
-import CardContent from '@material-ui/core/CardContent';
+import TextField from '@material-ui/core/TextField';
+import Button from '@material-ui/core/Button';
+import Dialog from '@material-ui/core/Dialog';
+import DialogTitle from '@material-ui/core/DialogTitle';
+import DialogContent from '@material-ui/core/DialogContent';
+import DialogActions from '@material-ui/core/DialogActions';
 import { Route, Switch } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import { ErrorToast } from './components/toasts';
+import NotFound from './components/NotFound';
+import { KeyboardUtil } from './utils'; 
 import SimpleEditor from './SimpleEditor';
 import MainMenu from './MainMenu';
 import Api from './Api';
 
-const NotFound = (props) => {
-  return (
-    <Card style={{ margin: 48, alignSelf: 'center' }}>
-      <CardContent>
-        <Typography variant="h1">Select a page from the menu</Typography>
-      </CardContent>
-    </Card>
-  );
+const DialogType = {
+  ADD_PAGE: 'addPage'
+};
+
+/**
+ * Validate that a filename follows the pattern:
+ * locale-appid-pageid like en-backoffice-mypage
+ * @param {string} filename
+ */
+function validateFilename(filename) {
+  const filenameRegex = /^[a-z]{2}-[a-z]{2,}-[a-z]{2,}$/;
+  return filenameRegex.test(filename);
 }
  
 class App extends Component {
@@ -28,6 +39,7 @@ class App extends Component {
   state = {
     data: {},
     addForm: {},
+    pendingFilename: '',
     isLoading: false,
     query: '',
     namespaces: [],
@@ -39,10 +51,19 @@ class App extends Component {
   }
 
   componentDidMount() {
-    this.fetchData();
+    this.fetchMenu();
+    this.registerKeyboardShortcuts();
   }
 
-  fetchData = async () => {
+  componentWillUnmount() {
+    window.removeEventListener('keyup', this.handleKeyboardShortcut);
+  }
+
+  registerKeyboardShortcuts = () => {
+    window.addEventListener('keyup', this.handleKeyboardShortcut);
+  }
+
+  fetchMenu = async () => {
     this.setState({
       isLoading: true,
     });
@@ -52,18 +73,95 @@ class App extends Component {
       isLoading: false,
     });
   }
+  
+  handleKeyboardShortcut = (e) => {
+    const shouldBail = KeyboardUtil.shouldBail(e.target);
+    if (!shouldBail && e.key === 'p') {
+      this.handleAddPageIntent();
+    }
+  };
+
+  handleAddPageIntent = () => {
+    this.setState({
+      dialog: {
+        name: DialogType.ADD_PAGE,
+        isOpen: true,
+      }
+    })
+  }
+
+  handleCloseDialog = () => {
+    this.setState({
+      dialog: { isOpen: false }
+    })
+  }
+
+  handleFileFormChange = ({ target }) => {
+    this.setState({
+      pendingFilename: target.value
+    })
+  }
+
+  handleSubmitPage = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+
+    const { pendingFilename } = this.state;
+    const isValid = validateFilename(pendingFilename);
+    if (!isValid) {
+      toast.error(<ErrorToast>Incorrect filename</ErrorToast>);
+      return;
+    }
+
+    try {
+      await Api.createJsonFile(pendingFilename);
+      toast.success(`Page "${pendingFilename}" added`);
+      this.fetchMenu();
+      this.setState({
+        pendingFilename: '',
+        dialog: { isOpen: false }
+      })
+    } catch (err) {
+      toast.error(<ErrorToast>{err.message}</ErrorToast>, {
+        autoClose: false
+      });
+    }
+  }
 
 
   render() {
     const { classes } = this.props;
-    const { isLoading, pages = [] } = this.state;
+    const { isLoading, pages = [], dialog, pendingFilename } = this.state;
     return (
       <div className={classes.app}>
-        <MainMenu entries={pages} />
+        <MainMenu entries={pages} onAdd={this.handleAddPageIntent} />
         <Switch>
           <Route path="/pages/:locale/:appId/:pageSlug" component={SimpleEditor} />
-          <NotFound />
+          <NotFound>Select a page from the menu</NotFound>
         </Switch>
+        <Dialog open={dialog.isOpen && dialog.name === DialogType.ADD_PAGE} onClose={this.handleCloseDialog} classes={{ paper: classes.dialog}}>
+          <DialogTitle>Add Page</DialogTitle>
+          <DialogContent>
+            <form onSubmit={this.handleSubmitPage}>
+              <TextField
+                variant="outlined"
+                InputLabelProps={{ shrink: true }}
+                value={pendingFilename}
+                name="filename"
+                label="Name"
+                style={{ marginTop: 8 }}
+                fullWidth
+                autoFocus
+                onChange={this.handleFileFormChange}
+                helperText="Should follow the format 'language-appname-pagename': 'en-backoffice-customers'"
+              />
+              <button type="submit" style={{ display: 'none'}}>Submit</button>
+            </form>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={this.handleCloseDialog}>Cancel</Button>
+            <Button onClick={this.handleSubmitPage} variant="contained" color="primary">Submit</Button>
+          </DialogActions>
+        </Dialog>
       </div>
     );
   }
@@ -75,6 +173,9 @@ const styles = () => ({
     gridTemplateColumns: 'min-content 1fr',
     height: '100vh',
     overflow: 'hidden'
+  },
+  dialog: {
+    minWidth: 500,
   }
 });
 
