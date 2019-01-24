@@ -5,24 +5,51 @@ import Button from '@material-ui/core/Button';
 import Tooltip from '@material-ui/core/Tooltip';
 import AddIcon from '@material-ui/icons/Add';
 
+const GroupName = {
+  PAGES: 'pages',
+  IMAGES: 'images'
+};
+
+const LocalePageLink = ({ page, classes }) => {
+  const [locale, appId, pageSlug] = page.key.replace('.json', '').split('-');
+  return (
+    <NavLink to={`/pages/${locale}/${appId}/${pageSlug}`} className={classes.listItem}>
+      <span className={classes.localeSlug}>{locale}</span>
+      <span className={classes.appSlug}>{appId}</span>
+      {pageSlug && <span className={classes.pageSlug}>{pageSlug}</span>}
+    </NavLink>
+  )
+}
+
+const ImagePageLink = ({ page, classes }) => {
+  return (
+    <NavLink to={`/images/${page.key}`} className={classes.listItem}>
+      {page.key}
+    </NavLink>
+  )
+}
+
 const MainMenu = (props) => {
-  const { entries = [], classes, onAdd } = props;
+  const { entries = {}, classes, onAdd } = props;
   return ( 
     <div className={classes.root}>
-      <ul className={classes.list}>
-        {entries.map((page) => {
-          const [locale, appId, pageSlug] = page.key.replace('.json', '').split('-');
-          return (
-            <li key={page.key}>
-              <NavLink to={`/pages/${locale}/${appId}/${pageSlug}`} className={classes.listItem}>
-                <span className={classes.localeSlug}>{locale}</span>
-                <span className={classes.appSlug}>{appId}</span>
-                {pageSlug && <span className={classes.pageSlug}>{pageSlug}</span>}
-              </NavLink>
-            </li>
-          )
-        })}
-      </ul>
+      <div className={classes.nav}>
+        <React.Fragment>
+          {Object.entries(entries).map(([groupName, groupEntries]) => (
+            <ul className={classes.list} key={groupName}>
+              <li className={classes.listHeader}>{groupName}</li>
+              {groupEntries.map((page) => {
+                return (
+                  <li key={page.key}>
+                    {groupName === GroupName.PAGES && <LocalePageLink classes={classes} page={page} />}
+                    {groupName === GroupName.IMAGES && <ImagePageLink classes={classes} page={page} />}
+                  </li>
+                )
+              })}
+            </ul>
+          ))}
+        </React.Fragment> 
+      </div>
       <div className={classes.footer}>
         <Tooltip title="Shortcut: p">
           <Button fullWidth onClick={onAdd} variant="contained" color="primary">
@@ -47,10 +74,17 @@ const styles = ({ spacing, custom }) => {
       display: 'flex',
       flexDirection: 'column'
     },
+    nav: {
+      flexGrow: 1
+    },
+    listHeader: {
+      textTransform: 'uppercase',
+      padding: 8,
+      fontWeight: 'bold'
+    },
     list: {
       listStyle: 'none',
       paddingLeft: 0,
-      flexGrow: 1
     },
     listItem: {
       color: textColor,

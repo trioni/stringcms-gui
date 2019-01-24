@@ -9,9 +9,11 @@ import DialogContent from '@material-ui/core/DialogContent';
 import DialogActions from '@material-ui/core/DialogActions';
 import { Route, Switch } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import _groupBy from 'lodash/groupBy';
 import { ErrorToast } from './components/toasts';
 import NotFound from './components/NotFound';
 import { KeyboardUtil } from './utils'; 
+import ImagePage from './pages/ImagePage';
 import SimpleEditor from './SimpleEditor';
 import MainMenu from './MainMenu';
 import Api from './Api';
@@ -28,6 +30,23 @@ const DialogType = {
 function validateFilename(filename) {
   const filenameRegex = /^[a-z]{2}-[a-z]{2,}-[a-z]{2,}$/;
   return filenameRegex.test(filename);
+}
+
+function isLocalePage(key) {
+  const filenameRegex = /^[a-z]{2}-[a-z]{2,}-[a-z]{2,}.json$/;
+  return filenameRegex.test(key);
+}
+
+function groupByType(entries) {
+  return _groupBy(entries, (entry) => {
+    if (entry.type === 'application/json' && isLocalePage(entry.key)) {
+      return 'pages';
+    }
+    if (entry.type.includes('image/')) {
+      return 'images';
+    }
+    return 'misc';
+  })
 }
  
 class App extends Component {
@@ -67,9 +86,9 @@ class App extends Component {
     this.setState({
       isLoading: true,
     });
-    const pages = await Api.listKeys();
+    const groupedEntries = await Api.listKeys().then(groupByType);
     this.setState({
-      pages,
+      groupedEntries,
       isLoading: false,
     });
   }
@@ -130,12 +149,13 @@ class App extends Component {
 
   render() {
     const { classes } = this.props;
-    const { isLoading, pages = [], dialog, pendingFilename } = this.state;
+    const { isLoading, groupedEntries = {}, dialog, pendingFilename } = this.state;
     return (
       <div className={classes.app}>
-        <MainMenu entries={pages} onAdd={this.handleAddPageIntent} />
+        <MainMenu entries={groupedEntries} onAdd={this.handleAddPageIntent} />
         <Switch>
           <Route path="/pages/:locale/:appId/:pageSlug" component={SimpleEditor} />
+          <Route path="/images/:filename" component={ImagePage} />
           <NotFound>Select a page from the menu</NotFound>
         </Switch>
         <Dialog open={dialog.isOpen && dialog.name === DialogType.ADD_PAGE} onClose={this.handleCloseDialog} classes={{ paper: classes.dialog}}>

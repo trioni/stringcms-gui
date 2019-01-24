@@ -1,5 +1,5 @@
-const USE_PROXY = process.env.REACT_APP_USE_PROXY;
-const HOST = USE_PROXY ? '/app/storage' : process.env.REACT_APP_ENDPOINT;
+import config from './config';
+
 class ExtendableError extends Error {
   constructor(message, code = 500) {
     super(message);
@@ -50,18 +50,25 @@ const DEFAULT_METADATA = {
   }]
 };
 
-class Api {
+class BaseApi {
+  static fetch(url, init = {}, ...rest) {
+    const urlToCall = `${config.storageHost}${url}`;
+    return fetch(urlToCall, init).then(parseResponse);
+  }
+}
+
+class Api extends BaseApi {
   static getFile(resource) {
-    return fetch(`${HOST}/${resource}`, {
+    return this.fetch(`/${resource}`, {
       headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json'
       }
-    }).then(parseResponse);
+    });
   }
 
   static listKeys() {
-    return fetch(`${HOST}?recursive=true&light=true`).then(parseResponse).then((r) => r.data.result);
+    return this.fetch(`?recursive=true&light=true`).then((r) => r.data.result);
   }
 
   static createJsonFile(filename) {
@@ -73,7 +80,7 @@ class Api {
       metaData: DEFAULT_METADATA,
     };
 
-    return fetch(`${HOST}/${filename}.json`, {
+    return this.fetch(`/${filename}.json`, {
       method: 'POST',
       credentials: 'include',
       headers: {
@@ -81,11 +88,11 @@ class Api {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(payload)
-    }).then(parseResponse)
+    })
   }
 
   static save(resource, body, etag) {
-    return fetch(`${HOST}/${resource}`, {
+    return this.fetch(`/${resource}`, {
       method: 'PUT',
       credentials: 'include',
       headers: {

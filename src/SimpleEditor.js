@@ -223,6 +223,7 @@ class SimpleEditor extends React.Component {
       });
       this.fetchData(pageId);
     } catch (err) {
+      toast.error(err.message);
       this.setState({
         data: 'Error',
         etag: ''
