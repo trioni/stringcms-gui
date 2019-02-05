@@ -149,7 +149,7 @@ class App extends Component {
 
   render() {
     const { classes } = this.props;
-    const { isLoading, groupedEntries = {}, dialog, pendingFilename } = this.state;
+    const { groupedEntries = {}, dialog, pendingFilename } = this.state;
     return (
       <div className={classes.app}>
         <MainMenu entries={groupedEntries} onAdd={this.handleAddPageIntent} />

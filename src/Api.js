@@ -15,6 +15,17 @@ class ExtendableError extends Error {
 
 export class ApiError extends ExtendableError {}
 
+
+// ucs-2 string to base64 encoded ascii
+function utoa(str) {
+  return btoa(unescape(encodeURIComponent(str)));
+}
+// base64 encoded ascii to ucs-2 string
+// eslint-disable-next-line
+function atou(str) {
+  return decodeURIComponent(escape(atob(str)));
+}
+
 async function parseResponse(res) {
   if (res.ok) {
     const etag = res.headers.get('ETag');
@@ -103,7 +114,7 @@ class Api extends BaseApi {
         message: 'Commit message from gui',
         userMail: 'stringcms@example.com',
         userInfo: 'Master of Strings',
-        data: btoa(JSON.stringify(body))
+        data: utoa(JSON.stringify(body))
       })
     })
   }
