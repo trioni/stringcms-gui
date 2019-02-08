@@ -14,8 +14,8 @@ import { ErrorToast } from './components/toasts';
 import NotFound from './components/NotFound';
 import { KeyboardUtil } from './utils'; 
 import ImagePage from './pages/ImagePage';
-import SimpleEditor from './SimpleEditor';
-import MainMenu from './MainMenu';
+import LocalePage from './pages/LocalePage';
+import MainMenu from './components/MainMenu';
 import Api from './Api';
 
 const DialogType = {
@@ -154,7 +154,7 @@ class App extends Component {
       <div className={classes.app}>
         <MainMenu entries={groupedEntries} onAdd={this.handleAddPageIntent} />
         <Switch>
-          <Route path="/pages/:locale/:appId/:pageSlug" component={SimpleEditor} />
+          <Route path="/pages/:locale/:appId/:pageSlug" component={LocalePage} />
           <Route path="/images/:filename" component={ImagePage} />
           <NotFound>Select a page from the menu</NotFound>
         </Switch>

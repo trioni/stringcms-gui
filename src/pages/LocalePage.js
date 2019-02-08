@@ -7,18 +7,19 @@ import DialogActions from '@material-ui/core/DialogActions';
 import TextField from '@material-ui/core/TextField';
 import Button from '@material-ui/core/Button';
 import IconButton from '@material-ui/core/IconButton';
+import LinearProgress from '@material-ui/core/LinearProgress';
 import Tooltip from '@material-ui/core/Tooltip';
 import DeleteIcon from '@material-ui/icons/Delete';
 import PreviewIcon from '@material-ui/icons/RemoveRedEye';
 import { toast } from 'react-toastify';
-import Version from './components/Version';
-import PreviewDialog from './components/PreviewDialog';
-import FloatingTopbar from './components/FloatingTopbar';
-import TextLabel from './components/TextLabel';
-import NotFound from './components/NotFound';
-import Api from './Api';
-import AddForm from './AddForm';
-import { KeyboardUtil } from './utils'; 
+import Version from '../components/Version';
+import PreviewDialog from '../components/PreviewDialog';
+import FloatingTopbar from '../components/FloatingTopbar';
+import TextLabel from '../components/TextLabel';
+import NotFound from '../components/NotFound';
+import Api from '../Api';
+import AddForm from '../components/AddForm';
+import { KeyboardUtil } from '../utils'; 
 
 const DialogType = {
   ADD: 'add',
@@ -46,7 +47,7 @@ function getNamespaces(data) {
   return Object.keys(namespaces);
 }
 
-class SimpleEditor extends React.Component {
+class LocalePage extends React.Component {
   state = {
     isLoading: false,
     namespaces: [],
@@ -58,7 +59,7 @@ class SimpleEditor extends React.Component {
   };
 
   componentDidMount() {
-    this.fetchData(this.getFileName(this.props));
+    this.fetchData(this.getFileName(this.props), true);
     window.addEventListener('keyup', this.handleKeyEvent);
   }
 
@@ -66,7 +67,12 @@ class SimpleEditor extends React.Component {
     const pageId = this.getFileName(this.props);
     const prevPageId = this.getFileName(prevProps);
     if (pageId !== prevPageId) {
-      this.fetchData(pageId);
+      this.setState({
+        query: '',
+        isLoadingPage: true,
+        isLoading: true
+      });
+      this.fetchData(pageId, true);
     }
   }
 
@@ -79,8 +85,9 @@ class SimpleEditor extends React.Component {
     return `${locale}-${appId}-${pageSlug}.json`;
   }
 
-  fetchData = async (fileId) => {
+  fetchData = async (fileId, isInitializing = false) => {
     this.setState({
+      ...(isInitializing ? { isLoadingPage: true }: {}),
       isLoading: true,
       error: null,
       addForm: {}
@@ -94,6 +101,7 @@ class SimpleEditor extends React.Component {
         namespaces: getNamespaces(sorted),
         etag,
         isLoading: false,
+        isLoadingPage: false,
       }); 
     } catch (err) {
       this.setState({
@@ -223,22 +231,21 @@ class SimpleEditor extends React.Component {
       });
       this.fetchData(pageId);
     } catch (err) {
-      toast.error(err.message);
-      this.setState({
-        data: 'Error',
-        etag: ''
-      })
+      toast.error(err.message, { autoClose: false });
     }
   }
 
   render() {
     const { classes } = this.props;
-    const { data, etag, addForm, isLoading, query, namespaces = [], dialog = {}, error } = this.state;
+    const { data, etag, addForm, isLoading, isLoadingPage, query, namespaces = [], dialog = {}, error } = this.state;
     if (error) {
       if (error.code === 404) {
         return <NotFound>404</NotFound>
       }
       return <pre>{JSON.stringify(error, null, 2)}</pre>
+    }
+    if (isLoadingPage) {
+      return <LinearProgress />;
     }
     const isJson = typeof data === 'object';
     const filtered = Object.entries(data).filter(([key = '', value = '']) =>
@@ -393,4 +400,4 @@ const styles = ({ palette, spacing }) => ({
   }
 });
 
-export default withStyles(styles)(SimpleEditor);
+export default withStyles(styles)(LocalePage);
