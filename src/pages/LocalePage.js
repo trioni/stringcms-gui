@@ -267,6 +267,19 @@ class LocalePage extends React.Component {
           <div className={classes.main}>
             <form onSubmit={this.handleSubmit} className={classes.form} id="master-form">
               {isJson && filtered.map(([key, value]) => {
+                const isString = typeof value === 'string';
+                const valueToRender = isString ? value:  JSON.stringify(value, null, 2);
+                if (!isString) {
+                  return (
+                    <div key={key}>
+                      <h2>Collections</h2>
+                      <p>Collection will be possible to edit shortly...</p>
+                      <div>
+                        <pre>{valueToRender}</pre>
+                      </div>
+                    </div>
+                  )
+                }
                 return (
                   <div className={classes.entry} key={key}>
                     <TextField
@@ -274,8 +287,8 @@ class LocalePage extends React.Component {
                       label={key}
                       key={key}
                       name={key}
-                      value={value}
                       className={classes.entryInput}
+                      value={valueToRender}
                       onChange={this.handleChange}
                       disabled={isLoading}
                     />
