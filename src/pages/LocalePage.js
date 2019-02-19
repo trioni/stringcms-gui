@@ -8,6 +8,7 @@ import TextField from '@material-ui/core/TextField';
 import Button from '@material-ui/core/Button';
 import IconButton from '@material-ui/core/IconButton';
 import LinearProgress from '@material-ui/core/LinearProgress';
+import Typography from '@material-ui/core/Typography';
 import Tooltip from '@material-ui/core/Tooltip';
 import DeleteIcon from '@material-ui/icons/Delete';
 import PreviewIcon from '@material-ui/icons/RemoveRedEye';
@@ -242,14 +243,24 @@ class LocalePage extends React.Component {
       if (error.code === 404) {
         return <NotFound>404</NotFound>
       }
-      return <pre>{JSON.stringify(error, null, 2)}</pre>
+
+      const errorType = typeof error;
+      const isString = errorType === 'string';
+      return (
+        <div className={classes.contentWrapper} style={{ padding: 20}}>
+          {isString && <Typography color="error">{error}</Typography>}
+          {!isString && (
+            <pre style={{ color: 'red' }}>{JSON.stringify(error, null, 2)}</pre>
+          )}
+        </div>
+      );
     }
     if (isLoadingPage) {
       return <LinearProgress />;
     }
     const isJson = typeof data === 'object';
-    const filtered = Object.entries(data).filter(([key = '', value = '']) =>
-      key.includes(query) || value.toLowerCase().includes(query)
+    const filtered = Object.entries(data).filter(([key = '', value]) =>
+      key.includes(query) || (typeof value === 'string' && value.toLowerCase().includes(query))
     );
     const numKeys = filtered.length;
     return (

@@ -63,6 +63,9 @@ const DEFAULT_METADATA = {
 
 class BaseApi {
   static fetch(url, init = {}, ...rest) {
+    if (!config.storageHost) {
+      return Promise.reject(`No endpoint is configured. Make sure to provide a "REACT_APP_ENDPOINT" environment variable pointing to a Jitstatic instance`);
+    }
     const urlToCall = `${config.storageHost}${url}`;
     return fetch(urlToCall, init).then(parseResponse);
   }
