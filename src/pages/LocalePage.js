@@ -405,7 +405,7 @@ class LocalePage extends React.Component {
                                       return this.renderInput(`${collectionName}[${entryIndex}].${entryKey}`, entryValue, j);
                                     })}
                                   </div>
-                                  <IconButton style={{ alignSelf: 'flex-start'}}value={`${collectionName}[0]`} type="button" onClick={this.handleDeleteKey}><DeleteIcon /></IconButton>
+                                  <IconButton style={{ alignSelf: 'flex-start'}}value={`${collectionName}[${entryIndex}]`} type="button" onClick={this.handleDeleteKey}><DeleteIcon /></IconButton>
                                 </div>
                               )
                             })}
