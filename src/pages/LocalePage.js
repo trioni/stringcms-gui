@@ -1,4 +1,5 @@
 import React from 'react';
+import classNames from 'classnames';
 import { withStyles } from '@material-ui/core/styles';
 import Dialog from '@material-ui/core/Dialog';
 import DialogTitle from '@material-ui/core/DialogTitle';
@@ -13,6 +14,7 @@ import Tooltip from '@material-ui/core/Tooltip';
 import DeleteIcon from '@material-ui/icons/Delete';
 import PreviewIcon from '@material-ui/icons/RemoveRedEye';
 import { toast } from 'react-toastify';
+import _set from 'lodash/set';
 import Version from '../components/Version';
 import PreviewDialog from '../components/PreviewDialog';
 import FloatingTopbar from '../components/FloatingTopbar';
@@ -20,7 +22,8 @@ import TextLabel from '../components/TextLabel';
 import NotFound from '../components/NotFound';
 import Api from '../Api';
 import AddForm from '../components/AddForm';
-import { KeyboardUtil } from '../utils'; 
+import { KeyboardUtil } from '../utils';
+import config from '../config';
 
 const DialogType = {
   ADD: 'add',
@@ -46,6 +49,26 @@ function getNamespaces(data) {
     return acc;
   }, {});
   return Object.keys(namespaces);
+}
+
+function checkIsCollectionEntry(key) {
+  return /\[(\d){1,}\]/.test(key);
+}
+
+function getCollectionNameByKey(key) {
+  const match = /([\w]{1,})\[\d{1,}\]/gi.exec(key);
+  if (match) {
+    return match[1];
+  }
+  return null;
+}
+
+function getEntryIndexByKey(key) {
+  const match = /\[(\d{1,})\]/gi.exec(key);
+  if (match) {
+    return parseInt(match[1], 10);
+  }
+  return null;
 }
 
 class LocalePage extends React.Component {
@@ -147,6 +170,19 @@ class LocalePage extends React.Component {
 
   handleChange = (e) => {
     const { name, value } = e.target;
+    const isCollectionKey = checkIsCollectionEntry(name);
+    if (isCollectionKey) {
+      const updatedState = _set(this.state.data.collections, name, value);
+      this.setState(prevState => ({
+        data: {
+          ...prevState.data,
+          collections: {
+            ...updatedState,
+          }
+        }
+      }))
+      return;
+    }
     this.setState((prevState) => ({
       data: {
         ...prevState.data,
@@ -198,16 +234,63 @@ class LocalePage extends React.Component {
   handleDeleteKey = (e) => {
     e.preventDefault();
     const { value } = e.currentTarget;
-    this.setState(({ data }) => {
-      delete data[value];
-      return {
+    const isCollectionEntry = checkIsCollectionEntry(value);
+    if (isCollectionEntry) {
+      const collectionName = getCollectionNameByKey(value);
+      const entryIndex = getEntryIndexByKey(value);
+      this.setState((prevState) => ({
         data: {
-          ...data
+          ...prevState.data,
+          collections: {
+            ...prevState.data.collections,
+            [collectionName]: prevState.data.collections[collectionName].filter((entry, index) => index !== entryIndex)
+          }
+        }
+      }), () => this.handleSubmit(e));
+    } else {
+      this.setState(({ data }) => {
+        delete data[value];
+        return {
+          data: {
+            ...data
+          }
+        }
+      }, () => {
+        this.handleSubmit(e);
+      })
+    }
+  }
+
+  handleAddToCollection = (e) => {
+    const { value } = e.currentTarget;
+    if (!value) return;
+    const collection = this.state.data.collections[value];
+    // Try to infer the shape to create based on the first item
+    const firstEntry = collection[0];
+    if (!firstEntry) {
+      toast.error('The collection is empty. Cannot determine the schema.');
+      return;
+    }
+
+    const newEntry = Object.keys(firstEntry).reduce((acc, key) => {
+      acc[key] = '';
+      return acc;
+    }, {});
+
+    this.setState((prevState) => ({
+      data: {
+        ...prevState.data,
+        collections: {
+          ...prevState.data.collections,
+          [value]: [
+            ...prevState.data.collections[value],
+            newEntry
+          ]
         }
       }
-    }, () => {
+    }), () => {
       this.handleSubmit(e);
-    })
+    });
   }
 
   handleSearchSubmit = (e) => {
@@ -234,6 +317,33 @@ class LocalePage extends React.Component {
     } catch (err) {
       toast.error(err.message, { autoClose: false });
     }
+  }
+
+  renderInput = (key, value, index) => {
+    const { classes } = this.props;
+    const { isLoading } = this.state;
+    const isCollectionEntry = index !== undefined;
+    return (
+      <div className={classNames(classes.entry, {
+        [classes.entryGrouped]: isCollectionEntry
+      })} key={key}>
+        <TextField
+          variant="filled"
+          label={key}
+          key={key}
+          name={key}
+          className={classes.entryInput}
+          value={value}
+          multiline={value.length > 100}
+          onChange={this.handleChange}
+          disabled={isLoading}
+        />
+        {/* only render for the first key in a collection entry or if a single string valeu */}
+        {(!isCollectionEntry) && (
+          <IconButton value={key} type="button" onClick={this.handleDeleteKey}><DeleteIcon /></IconButton>
+        )}
+      </div>
+    )
   }
 
   render() {
@@ -280,32 +390,33 @@ class LocalePage extends React.Component {
               {isJson && filtered.map(([key, value]) => {
                 const isString = typeof value === 'string';
                 const valueToRender = isString ? value:  JSON.stringify(value, null, 2);
-                if (!isString) {
+                if (key === 'collections') {
                   return (
-                    <div key={key}>
-                      <h2>Collections</h2>
-                      <p>Collection will be possible to edit shortly...</p>
-                      <div>
-                        <pre>{valueToRender}</pre>
-                      </div>
+                    <div key={key} style={{ marginBottom: 20}}>
+                      {Object.entries(data[key]).map(([collectionName, entries], collectionIndex) => (
+                        <div key={collectionName} style={{ marginBottom: 20 }}>
+                          <h3>{collectionName}</h3>
+                          <div>
+                            {entries.map((entry, entryIndex) => {
+                              return (
+                                <div className={classes.collectionEntryWrapper} key={entryIndex}>
+                                  <div className={classes.collectionEntry} style={{ borderLeft: `3px solid ${config.colorScale[collectionIndex || 0]}` }}>
+                                    {Object.entries(entry).map(([entryKey, entryValue], j) => {
+                                      return this.renderInput(`${collectionName}[${entryIndex}].${entryKey}`, entryValue, j);
+                                    })}
+                                  </div>
+                                  <IconButton style={{ alignSelf: 'flex-start'}}value={`${collectionName}[0]`} type="button" onClick={this.handleDeleteKey}><DeleteIcon /></IconButton>
+                                </div>
+                              )
+                            })}
+                          </div>
+                          <Button color="primary" variant="contained" value={collectionName} onClick={this.handleAddToCollection}>Add to {collectionName}</Button>
+                        </div>
+                      ))}
                     </div>
                   )
                 }
-                return (
-                  <div className={classes.entry} key={key}>
-                    <TextField
-                      variant="filled"
-                      label={key}
-                      key={key}
-                      name={key}
-                      className={classes.entryInput}
-                      value={valueToRender}
-                      onChange={this.handleChange}
-                      disabled={isLoading}
-                    />
-                    <IconButton value={key} type="button" onClick={this.handleDeleteKey}><DeleteIcon /></IconButton>
-                  </div>
-                )
+                return this.renderInput(key, valueToRender);
               })}
             </form>
           </div>
@@ -409,9 +520,19 @@ const styles = ({ palette, spacing }) => ({
     alignItems: 'center',
     marginBottom: spacing.unit * 2
   },
+  entryGrouped: {
+    marginBottom: 0
+  },
   entryInput: {
     display: 'flex',
     flex: 1
+  },
+  collectionEntryWrapper: {
+    display: 'flex',
+  },
+  collectionEntry: {
+    marginBottom: 10,
+    flex: 1,
   },
   hasDropdown: {
     overflowY: 'visible'
