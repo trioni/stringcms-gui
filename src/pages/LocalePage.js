@@ -106,6 +106,9 @@ class LocalePage extends React.Component {
 
   getFileName = (props) => {
     const { locale, appId, pageSlug } = props.match.params;
+    if (!locale) {
+      return props.match.url.replace('/', '') + '.json';
+    }
     return `${locale}-${appId}-${pageSlug}.json`;
   }
 
@@ -390,6 +393,14 @@ class LocalePage extends React.Component {
               {isJson && filtered.map(([key, value]) => {
                 const isString = typeof value === 'string';
                 const valueToRender = isString ? value:  JSON.stringify(value, null, 2);
+                if (!isString && key !== 'collections') {
+                  return (
+                    <div key={key}>
+                      <Typography color="textSecondary">{key} <span style={{ color: 'red'}}>(update through Git)</span></Typography>
+                      <pre key={key}>{JSON.stringify(value, null, 2)}</pre>
+                    </div>
+                  )
+                }
                 if (key === 'collections') {
                   return (
                     <div key={key} style={{ marginBottom: 20}}>

@@ -37,10 +37,18 @@ function isLocalePage(key) {
   return filenameRegex.test(key);
 }
 
+function isUISettings(key) {
+  const filenameRegex = /^ui-settings\//;
+  return filenameRegex.test(key);
+}
+
 function groupByType(entries) {
   return _groupBy(entries, (entry) => {
     if (entry.type === 'application/json' && isLocalePage(entry.key)) {
       return 'pages';
+    }
+    if (entry.type === 'application/json' && isUISettings(entry.key)) {
+      return 'ui-settings';
     }
     if (entry.type.includes('image/')) {
       return 'images';
@@ -155,6 +163,7 @@ class App extends Component {
         <MainMenu entries={groupedEntries} onAdd={this.handleAddPageIntent} />
         <Switch>
           <Route path="/pages/:locale/:appId/:pageSlug" component={LocalePage} />
+          <Route path="/ui-settings/:appId/:pageSlug" component={LocalePage} />
           <Route path="/images/:filename" component={ImagePage} />
           <NotFound>Select a page from the menu</NotFound>
         </Switch>

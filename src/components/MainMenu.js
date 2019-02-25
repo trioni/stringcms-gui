@@ -7,7 +7,8 @@ import AddIcon from '@material-ui/icons/Add';
 
 const GroupName = {
   PAGES: 'pages',
-  IMAGES: 'images'
+  IMAGES: 'images',
+  UI_SETTINGS: 'ui-settings'
 };
 
 const LocalePageLink = ({ page, classes }) => {
@@ -29,6 +30,22 @@ const ImagePageLink = ({ page, classes }) => {
   )
 }
 
+const UISettingsPageLink = ({page, classes }) => {
+  const [folder, appId, pageSlug] = page.key.replace('.json', '').split('/');
+  return (
+    <NavLink to={`/${folder}/${appId}/${pageSlug}`} className={classes.listItem}>
+      <span className={classes.appSlug}>{appId}</span>
+      {pageSlug && <span className={classes.pageSlug}>{pageSlug}</span>}
+    </NavLink>
+  )
+}
+
+const DefaultPageLink = ({ page, classes }) => (
+  <NavLink to={`/${page.key}`} className={classes.listItem}>
+    {page.key}
+  </NavLink>
+)
+
 const MainMenu = (props) => {
   const { entries = {}, classes, onAdd } = props;
   return ( 
@@ -43,6 +60,8 @@ const MainMenu = (props) => {
                   <li key={page.key}>
                     {groupName === GroupName.PAGES && <LocalePageLink classes={classes} page={page} />}
                     {groupName === GroupName.IMAGES && <ImagePageLink classes={classes} page={page} />}
+                    {groupName === GroupName.UI_SETTINGS && <UISettingsPageLink classes={classes} page={page} />}
+                    {groupName !== GroupName.UI_SETTINGS && groupName !== GroupName.IMAGES && groupName !== GroupName.PAGES && <DefaultPageLink classes={classes} page={page} />}
                   </li>
                 )
               })}
